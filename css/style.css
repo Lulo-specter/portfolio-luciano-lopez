@@ -83,10 +83,30 @@ img {
 }
 
 .logo {
-  font-weight: 700;
-  font-family: "Bricolage Grotesque", sans-serif;
-  font-size: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
   white-space: nowrap;
+}
+
+.logo-nombre {
+  color: var(--text);
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 0.95;
+}
+
+.logo-nombre span {
+  color: var(--accent);
+}
+
+.logo-identidad {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .menu {
