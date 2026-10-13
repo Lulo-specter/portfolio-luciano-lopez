@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300" role="img" aria-label="Avatar de Lulo con escudo de ciberseguridad">
+  <defs>
+    <radialGradient id="fondo" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#12202b"/>
+      <stop offset="100%" stop-color="#070b10"/>
+    </radialGradient>
+    <filter id="brillo" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="300" height="300" fill="url(#fondo)"/>
+
+  <g stroke="#00ff9c" stroke-opacity="0.12" stroke-width="1" fill="none">
+    <path d="M0 60 H40 L55 75 H90"/>
+    <path d="M300 70 H260 L245 85 H215"/>
+    <path d="M0 200 H30 L45 185 H70"/>
+    <path d="M300 210 H270 L255 195 H230"/>
+  </g>
+
+  <g font-family="'Courier New', monospace" font-size="11" fill="#00ff9c" fill-opacity="0.22">
+    <text x="12" y="24">0101 1010</text>
+    <text x="214" y="24">1100 0110</text>
+    <text x="12" y="248">1001 0011</text>
+    <text x="214" y="248">0110 1001</text>
+  </g>
+
+  <path d="M150 28 L222 54 V130 C222 178 190 211 150 233 C110 211 78 178 78 130 V54 Z"
+        fill="#00ff9c" fill-opacity="0.08" stroke="#00ff9c" stroke-width="4" stroke-linejoin="round" filter="url(#brillo)"/>
+
+  <g fill="#00ff9c" filter="url(#brillo)">
+    <circle cx="150" cy="106" r="18"/>
+    <path d="M142 118 L158 118 L165 164 L135 164 Z"/>
+  </g>
+
+  <text x="150" y="278" text-anchor="middle"
+        font-family="'Courier New', monospace" font-size="30" font-weight="bold"
+        fill="#00ff9c" filter="url(#brillo)">&gt; lulo_</text>
+</svg>
