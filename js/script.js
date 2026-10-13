@@ -80,12 +80,14 @@ if (formContacto) {
       errorMensaje.textContent = '';
     }
 
-    if (!valido) {
+    if (!valido || !formContacto.hasAttribute('action')) {
       event.preventDefault();
 
       if (respuesta) {
-      respuesta.textContent = '';
-      respuesta.classList.remove('visible');
+        respuesta.textContent = valido
+          ? 'El envío todavía no está conectado. Podés escribirme por LinkedIn mientras tanto.'
+          : '';
+        respuesta.classList.toggle('visible', valido);
       }
     }
   });

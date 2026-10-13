@@ -15,7 +15,7 @@ Este proyecto fue desarrollado como actividad integradora de la Unidad 3. Tiene 
 - Sección de inicio con presentación personal
 - Sección sobre mí
 - Sección de proyectos
-- Formulario de contacto conectado a FormSubmit y validación de campos
+- Formulario de contacto con validación; recepción pendiente de configurar endpoint
 - Menú responsive
 - Filtro de proyectos por categoría
 - Cambio de tema simple
