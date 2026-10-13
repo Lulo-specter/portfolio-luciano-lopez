@@ -1,8 +1,5 @@
 const btnMenu = document.getElementById('btnMenu');
 const menu = document.getElementById('menu');
-const btnTema = document.getElementById('btnTema');
-const filtros = document.querySelectorAll('.filtro');
-const tarjetas = document.querySelectorAll('.card');
 const formContacto = document.getElementById('formContacto');
 const contador = document.getElementById('contador');
 const mensaje = document.getElementById('mensaje');
@@ -15,30 +12,6 @@ if (btnMenu && menu) {
     btnMenu.setAttribute('aria-label', abierto ? 'Cerrar menú' : 'Abrir menú');
   });
 }
-
-if (btnTema) {
-  btnTema.addEventListener('click', () => {
-    document.body.classList.toggle('dark-theme');
-    const oscuro = document.body.classList.contains('dark-theme');
-    btnTema.textContent = oscuro ? '☀' : '☾';
-    btnTema.setAttribute('aria-pressed', String(oscuro));
-  });
-}
-
-filtros.forEach((filtro) => {
-  filtro.addEventListener('click', () => {
-    const categoria = filtro.dataset.filtro;
-
-    filtros.forEach((btn) => btn.classList.remove('activo'));
-    filtro.classList.add('activo');
-
-    tarjetas.forEach((tarjeta) => {
-      const categoriaTarjeta = tarjeta.dataset.categoria;
-      const mostrar = categoria === 'todos' || categoriaTarjeta === categoria;
-      tarjeta.style.display = mostrar ? 'block' : 'none';
-    });
-  });
-});
 
 if (mensaje && contador) {
   mensaje.addEventListener('input', () => {

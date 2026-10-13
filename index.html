@@ -27,10 +27,7 @@
         <li><a href="#contacto">Contacto</a></li>
       </ul>
 
-      <div class="nav-controles">
-        <button id="btnMenu" class="btn-menu" aria-label="Abrir menú" aria-expanded="false">☰</button>
-        <button id="btnTema" class="btn-tema" aria-label="Cambiar tema" aria-pressed="false">☾</button>
-      </div>
+      <button id="btnMenu" class="btn-menu" aria-label="Abrir menú" aria-expanded="false">☰</button>
     </nav>
   </header>
 
@@ -110,17 +107,10 @@
     <section id="proyectos" class="seccion">
       <h2>Proyectos</h2>
 
-      <div class="filtros">
-        <button class="filtro activo" data-filtro="todos">Todos</button>
-        <button class="filtro" data-filtro="terminado">Terminados</button>
-        <button class="filtro" data-filtro="desarrollo">En desarrollo</button>
-      </div>
-
       <div class="grid-proyectos">
 
-        <article class="card" data-categoria="terminado">
+        <article class="card">
           <img src="img/vitalhome.jpeg" alt="VitalHome" width="400" height="400" class="logo-vitalhome">
-          <span class="estado estado-terminado">Terminado</span>
           <h3>VitalHome</h3>
           <p>
             Aplicación móvil de domótica para adultos mayores con funciones de
@@ -130,8 +120,7 @@
           <p><strong>Tecnologías:</strong> Java, Android, UX y accesibilidad</p>
         </article>
 
-        <article class="card" data-categoria="desarrollo">
-          <span class="estado estado-desarrollo">En desarrollo</span>
+        <article class="card">
           <h3>Sistema de gestión para gimnasio</h3>
           <p>
             Aplicación web para registrar profesores y alumnos por turno,
@@ -141,8 +130,7 @@
           <p><strong>Tecnologías:</strong> PHP, HTML, CSS, JavaScript</p>
         </article>
 
-        <article class="card" data-categoria="terminado">
-          <span class="estado estado-terminado">Terminado</span>
+        <article class="card">
           <h3>Sistema de gestión para C&M</h3>
           <p>
             Sistema para registrar los kilos de yerba sin procesar, desarrollado

@@ -9,9 +9,6 @@
   --accent-strong: #963c27;
   --action-bg: #963c27;
   --action-text: #fffaf4;
-  --success-bg: #e4e9dc;
-  --success-text: #40543a;
-  --neutral-bg: #eae5db;
 }
 
 * {
@@ -28,24 +25,6 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
-}
-
-body.dark-theme {
-  --bg: #20221e;
-  --panel: #292b26;
-  --input: #242620;
-  --text: #f2eee4;
-  --muted: #c3bcad;
-  --line: #47483f;
-  --accent: #ed9877;
-  --accent-strong: #f1a486;
-  --action-bg: #e89978;
-  --action-text: #28211d;
-  --success-bg: #354034;
-  --success-text: #c6d4b9;
-  --neutral-bg: #3b3a33;
-  background: var(--bg);
-  color: var(--text);
 }
 
 a {
@@ -119,12 +98,6 @@ img {
 
 .menu a {
   color: var(--muted);
-}
-
-.nav-controles {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .hero {
@@ -215,28 +188,6 @@ ol {
   padding-left: 0;
 }
 
-.filtros {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
-.filtro {
-  border: 1px solid var(--line);
-  background: var(--panel);
-  color: var(--text);
-  padding: 0.6rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.filtro.activo {
-  background: var(--action-bg);
-  color: var(--action-text);
-  border-color: var(--action-bg);
-}
-
 .grid-proyectos {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -256,21 +207,6 @@ ol {
   max-height: 280px;
   margin: 0 auto 0.75rem;
   object-fit: contain;
-}
-
-.estado {
-  display: inline-block;
-  font-size: 0.72rem;
-  padding: 0.35rem 0.7rem;
-  border-radius: 999px;
-  background: var(--success-bg);
-  color: var(--success-text);
-  margin-bottom: 0.8rem;
-}
-
-.estado-desarrollo {
-  background: var(--neutral-bg);
-  color: var(--muted);
 }
 
 .formulario {
@@ -318,8 +254,7 @@ small {
   color: var(--muted);
 }
 
-.btn-menu,
-.btn-tema {
+.btn-menu {
   display: inline-flex;
   align-items: center;
   justify-content: center;

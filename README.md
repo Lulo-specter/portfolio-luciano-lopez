@@ -17,8 +17,7 @@ Este proyecto fue desarrollado como actividad integradora de la Unidad 3. Tiene 
 - Sección de proyectos
 - Formulario de contacto con validación; recepción pendiente de configurar endpoint
 - Menú responsive
-- Filtro de proyectos por categoría
-- Cambio de tema simple
+- Contador de caracteres del mensaje
 
 ## Proyectos
 - VitalHome: aplicación para Android desarrollada en Java.
@@ -30,6 +29,7 @@ Este proyecto fue desarrollado como actividad integradora de la Unidad 3. Tiene 
 3. Ejecutar el archivo `index.html` en un navegador.
 
 ## Enlaces
+- Sitio publicado: https://lulo-specter.github.io/portfolio-luciano-lopez/
 - GitHub: https://github.com/Lulo-specter
 - LinkedIn: https://www.linkedin.com/in/luciano-lopez-b90b642a1/
 
