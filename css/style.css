@@ -195,13 +195,6 @@ ol {
   overflow: hidden;
 }
 
-.enlace-repositorio {
-  color: var(--accent-strong);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-}
-
 .logo-vitalhome {
   width: 100%;
   max-height: 280px;

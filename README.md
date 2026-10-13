@@ -21,8 +21,8 @@ Este proyecto fue desarrollado como actividad integradora de la Unidad 3. Tiene 
 - Cambio de tema simple
 
 ## Proyectos
-- VitalHome: https://github.com/AndresP573/VitalHome
-- Sistema de gestión para C&M: https://github.com/Lulo-specter/TP-Poo-Final
+- VitalHome: aplicación para Android desarrollada en Java.
+- C&M: sistema de gestión para registrar kilos de yerba sin procesar, desarrollado en Java.
 
 ## Cómo visualizar el proyecto
 1. Clonar o descargar el repositorio.
