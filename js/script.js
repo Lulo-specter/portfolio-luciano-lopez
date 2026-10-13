@@ -10,15 +10,18 @@ const respuesta = document.getElementById('respuesta');
 
 if (btnMenu && menu) {
   btnMenu.addEventListener('click', () => {
-    menu.classList.toggle('menu-visible');
+    const abierto = menu.classList.toggle('menu-visible');
+    btnMenu.setAttribute('aria-expanded', String(abierto));
+    btnMenu.setAttribute('aria-label', abierto ? 'Cerrar menú' : 'Abrir menú');
   });
 }
 
 if (btnTema) {
   btnTema.addEventListener('click', () => {
     document.body.classList.toggle('dark-theme');
-    const modo = document.body.classList.contains('dark-theme') ? 'Oscuro' : 'Claro';
-    btnTema.textContent = modo === 'Oscuro' ? '☀️' : '🌙';
+    const oscuro = document.body.classList.contains('dark-theme');
+    btnTema.textContent = oscuro ? '☀' : '☾';
+    btnTema.setAttribute('aria-pressed', String(oscuro));
   });
 }
 
