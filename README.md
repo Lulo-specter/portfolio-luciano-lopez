@@ -31,5 +31,5 @@ Este proyecto fue desarrollado como actividad integradora de la Unidad 3. Tiene 
 
 ## Enlaces
 - GitHub: https://github.com/Lulo-specter
-- LinkedIn: https://ar.linkedin.com/in/luciano-lopez-b90b642a1
+- LinkedIn: https://www.linkedin.com/in/luciano-lopez-b90b642a1/
 
