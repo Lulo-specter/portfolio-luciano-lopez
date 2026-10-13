@@ -15,7 +15,7 @@ Este proyecto fue desarrollado como actividad integradora de la Unidad 3. Tiene 
 - Sección de inicio con presentación personal
 - Sección sobre mí
 - Sección de proyectos
-- Formulario de contacto con validación; recepción pendiente de configurar endpoint
+- Formulario de contacto conectado a Formspree, con validación de campos
 - Menú responsive
 - Contador de caracteres del mensaje
 
