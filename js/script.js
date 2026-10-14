@@ -6,10 +6,35 @@ const mensaje = document.getElementById('mensaje');
 const respuesta = document.getElementById('respuesta');
 
 if (btnMenu && menu) {
+  const cerrarMenu = () => {
+    menu.classList.remove('menu-visible');
+    btnMenu.setAttribute('aria-expanded', 'false');
+    btnMenu.setAttribute('aria-label', 'Abrir menú');
+  };
+
   btnMenu.addEventListener('click', () => {
     const abierto = menu.classList.toggle('menu-visible');
     btnMenu.setAttribute('aria-expanded', String(abierto));
     btnMenu.setAttribute('aria-label', abierto ? 'Cerrar menú' : 'Abrir menú');
+  });
+
+  menu.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', cerrarMenu);
+  });
+
+  document.addEventListener('click', (event) => {
+    const nav = btnMenu.closest('.nav');
+    if (!nav || nav.contains(event.target)) {
+      return;
+    }
+
+    cerrarMenu();
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      cerrarMenu();
+    }
   });
 }
 
