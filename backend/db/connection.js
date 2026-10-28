@@ -1,13 +1,14 @@
-const Database = require('better-sqlite3');
-const fs = require('node:fs');
-const path = require('node:path');
+const { Pool } = require('@neondatabase/serverless');
 
-const dbPath = path.join(__dirname, 'portfolio.sqlite');
-const schemaPath = path.join(__dirname, 'schema.sql');
+if (!process.env.DATABASE_URL) {
+  throw new Error('Falta DATABASE_URL. Configurala en backend/.env o en el panel de Vercel.');
+}
 
-const db = new Database(dbPath);
-const schema = fs.readFileSync(schemaPath, 'utf8');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 5,
+  idleTimeoutMillis: 10000,
+  connectionTimeoutMillis: 10000,
+});
 
-db.exec(schema);
-
-module.exports = db;
+module.exports = pool;

@@ -6,34 +6,80 @@ const inicializarDatos = require('./db/seed');
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const raizPortfolio = path.resolve(__dirname, '..');
+const apiSoloLectura = process.env.VERCEL === '1' || process.env.READ_ONLY_API === 'true';
+const origenesPermitidos = new Set([
+  'https://lulo-specter.github.io',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  process.env.FRONTEND_ORIGIN,
+].filter(Boolean));
+let baseLista;
 
-inicializarDatos(db);
+function asegurarBaseLista() {
+  if (!baseLista) {
+    baseLista = inicializarDatos(db);
+  }
+
+  return baseLista;
+}
+
+app.use((req, res, next) => {
+  const origen = req.get('Origin');
+
+  if (origen && !origenesPermitidos.has(origen)) {
+    return res.status(403).json({ error: 'Origen no permitido.' });
+  }
+
+  if (origen) {
+    res.set('Access-Control-Allow-Origin', origen);
+    res.set('Vary', 'Origin');
+    res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+  }
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+
+  return next();
+});
 
 app.use(express.json({ limit: '20kb' }));
 
-app.get('/api/salud', (req, res) => {
-  res.json({ ok: true, mensaje: 'Backend funcionando' });
+app.use('/api', (req, res, next) => {
+  if (apiSoloLectura && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+    return res.status(403).json({ error: 'La API pública solo permite consultar proyectos.' });
+  }
+
+  return next();
 });
 
-function obtenerProyectos() {
-  const filas = db.prepare(`
+app.get('/api/salud', async (req, res) => {
+  await asegurarBaseLista();
+  return res.json({ ok: true, mensaje: 'Backend funcionando' });
+});
+
+async function obtenerProyectos() {
+  const soloPublicados = apiSoloLectura ? "WHERE p.estado_publicacion = 'publicado'" : '';
+  const resultado = await db.query(`
     SELECT
       p.id,
       p.nombre,
       p.descripcion,
-      p.imagen_url AS imagenUrl,
-      p.enlace_url AS enlaceUrl,
-      p.estado_publicacion AS estadoPublicacion,
+      p.imagen_url AS "imagenUrl",
+      p.enlace_url AS "enlaceUrl",
+      p.estado_publicacion AS "estadoPublicacion",
       t.nombre AS tecnologia
     FROM proyectos p
     LEFT JOIN proyecto_tecnologia pt ON pt.proyecto_id = p.id
     LEFT JOIN tecnologias t ON t.id = pt.tecnologia_id
+    ${soloPublicados}
     ORDER BY p.id, t.nombre
-  `).all();
+  `);
 
   const proyectos = new Map();
 
-  for (const fila of filas) {
+  for (const fila of resultado.rows) {
     if (!proyectos.has(fila.id)) {
       proyectos.set(fila.id, {
         id: fila.id,
@@ -143,36 +189,55 @@ function esImagenSegura(valor) {
     && !valor.split(/[\\/]/).includes('..');
 }
 
-function guardarTecnologias(proyectoId, tecnologias) {
-  const insertarTecnologia = db.prepare(`
-    INSERT INTO tecnologias (nombre)
-    VALUES (?)
-    ON CONFLICT(nombre) DO NOTHING
-  `);
-  const obtenerTecnologia = db.prepare('SELECT id FROM tecnologias WHERE nombre = ?');
-  const asociarTecnologia = db.prepare(`
-    INSERT INTO proyecto_tecnologia (proyecto_id, tecnologia_id)
-    VALUES (?, ?)
-  `);
-
+async function guardarTecnologias(client, proyectoId, tecnologias) {
   for (const nombre of tecnologias) {
-    insertarTecnologia.run(nombre);
-    const tecnologia = obtenerTecnologia.get(nombre);
-    asociarTecnologia.run(proyectoId, tecnologia.id);
+    await client.query(`
+      INSERT INTO tecnologias (nombre)
+      VALUES ($1)
+      ON CONFLICT (nombre) DO NOTHING
+    `, [nombre]);
+
+    const tecnologia = await client.query(
+      'SELECT id FROM tecnologias WHERE nombre = $1',
+      [nombre],
+    );
+
+    await client.query(`
+      INSERT INTO proyecto_tecnologia (proyecto_id, tecnologia_id)
+      VALUES ($1, $2)
+    `, [proyectoId, tecnologia.rows[0].id]);
   }
 }
 
-app.get('/api/proyectos', (req, res) => {
-  res.json(obtenerProyectos());
+async function conTransaccion(operacion) {
+  const client = await db.connect();
+
+  try {
+    await client.query('BEGIN');
+    const resultado = await operacion(client);
+    await client.query('COMMIT');
+    return resultado;
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+app.get('/api/proyectos', async (req, res) => {
+  await asegurarBaseLista();
+  return res.json(await obtenerProyectos());
 });
 
-app.get('/api/proyectos/:id', (req, res) => {
+app.get('/api/proyectos/:id', async (req, res) => {
+  await asegurarBaseLista();
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id < 1) {
     return res.status(400).json({ error: 'El identificador debe ser un número entero positivo.' });
   }
 
-  const proyecto = obtenerProyectos().find((elemento) => elemento.id === id);
+  const proyecto = (await obtenerProyectos()).find((elemento) => elemento.id === id);
   if (!proyecto) {
     return res.status(404).json({ error: 'No se encontró el proyecto.' });
   }
@@ -180,39 +245,41 @@ app.get('/api/proyectos/:id', (req, res) => {
   return res.json(proyecto);
 });
 
-app.post('/api/proyectos', (req, res) => {
+app.post('/api/proyectos', async (req, res) => {
+  await asegurarBaseLista();
   const resultado = validarProyecto(req.body);
   if (resultado.error) {
     return res.status(400).json({ error: resultado.error });
   }
 
-  const crearProyecto = db.transaction((proyecto) => {
-    const resultadoInsercion = db.prepare(`
+  const id = await conTransaccion(async (client) => {
+    const insercion = await client.query(`
       INSERT INTO proyectos (
         nombre, descripcion, imagen_url, enlace_url, estado_publicacion
       )
-      VALUES (
-        @nombre, @descripcion, @imagenUrl, @enlaceUrl, @estadoPublicacion
-      )
-    `).run(proyecto);
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `, [
+      resultado.proyecto.nombre,
+      resultado.proyecto.descripcion,
+      resultado.proyecto.imagenUrl,
+      resultado.proyecto.enlaceUrl,
+      resultado.proyecto.estadoPublicacion,
+    ]);
 
-    guardarTecnologias(resultadoInsercion.lastInsertRowid, proyecto.tecnologias);
-    return resultadoInsercion.lastInsertRowid;
+    await guardarTecnologias(client, insercion.rows[0].id, resultado.proyecto.tecnologias);
+    return insercion.rows[0].id;
   });
 
-  const id = crearProyecto(resultado.proyecto);
-  const creado = obtenerProyectos().find((proyecto) => proyecto.id === id);
+  const creado = (await obtenerProyectos()).find((proyecto) => proyecto.id === id);
   return res.status(201).json(creado);
 });
 
-app.put('/api/proyectos/:id', (req, res) => {
+app.put('/api/proyectos/:id', async (req, res) => {
+  await asegurarBaseLista();
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id < 1) {
     return res.status(400).json({ error: 'El identificador debe ser un número entero positivo.' });
-  }
-
-  if (!db.prepare('SELECT id FROM proyectos WHERE id = ?').get(id)) {
-    return res.status(404).json({ error: 'No se encontró el proyecto.' });
   }
 
   const resultado = validarProyecto(req.body);
@@ -220,47 +287,70 @@ app.put('/api/proyectos/:id', (req, res) => {
     return res.status(400).json({ error: resultado.error });
   }
 
-  const actualizarProyecto = db.transaction((proyecto) => {
-    db.prepare(`
-      UPDATE proyectos
-      SET nombre = @nombre,
-          descripcion = @descripcion,
-          imagen_url = @imagenUrl,
-          enlace_url = @enlaceUrl,
-          estado_publicacion = @estadoPublicacion
-      WHERE id = @id
-    `).run({ ...proyecto, id });
+  const actualizacion = await conTransaccion(async (client) => {
+    const existente = await client.query('SELECT id FROM proyectos WHERE id = $1', [id]);
+    if (existente.rowCount === 0) {
+      return null;
+    }
 
-    db.prepare('DELETE FROM proyecto_tecnologia WHERE proyecto_id = ?').run(id);
-    guardarTecnologias(id, proyecto.tecnologias);
+    await client.query(`
+      UPDATE proyectos
+      SET nombre = $1,
+          descripcion = $2,
+          imagen_url = $3,
+          enlace_url = $4,
+          estado_publicacion = $5
+      WHERE id = $6
+    `, [
+      resultado.proyecto.nombre,
+      resultado.proyecto.descripcion,
+      resultado.proyecto.imagenUrl,
+      resultado.proyecto.enlaceUrl,
+      resultado.proyecto.estadoPublicacion,
+      id,
+    ]);
+
+    await client.query('DELETE FROM proyecto_tecnologia WHERE proyecto_id = $1', [id]);
+    await guardarTecnologias(client, id, resultado.proyecto.tecnologias);
+    return true;
   });
 
-  actualizarProyecto(resultado.proyecto);
-  const actualizado = obtenerProyectos().find((proyecto) => proyecto.id === id);
+  if (!actualizacion) {
+    return res.status(404).json({ error: 'No se encontró el proyecto.' });
+  }
+
+  const actualizado = (await obtenerProyectos()).find((proyecto) => proyecto.id === id);
   return res.json(actualizado);
 });
 
-app.delete('/api/proyectos/:id', (req, res) => {
+app.delete('/api/proyectos/:id', async (req, res) => {
+  await asegurarBaseLista();
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id < 1) {
     return res.status(400).json({ error: 'El identificador debe ser un número entero positivo.' });
   }
 
-  const resultado = db.prepare('DELETE FROM proyectos WHERE id = ?').run(id);
-  if (resultado.changes === 0) {
+  const resultado = await db.query('DELETE FROM proyectos WHERE id = $1', [id]);
+  if (resultado.rowCount === 0) {
     return res.status(404).json({ error: 'No se encontró el proyecto.' });
   }
 
   return res.status(204).end();
 });
 
-app.use('/css', express.static(path.join(raizPortfolio, 'css')));
-app.use('/js', express.static(path.join(raizPortfolio, 'js')));
-app.use('/img', express.static(path.join(raizPortfolio, 'img')));
+if (process.env.VERCEL !== '1') {
+  app.use('/css', express.static(path.join(raizPortfolio, 'css')));
+  app.use('/js', express.static(path.join(raizPortfolio, 'js')));
+  app.use('/img', express.static(path.join(raizPortfolio, 'img')));
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(raizPortfolio, 'index.html'));
-});
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(raizPortfolio, 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.json({ ok: true, mensaje: 'API del portfolio' });
+  });
+}
 
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'La ruta de la API no existe.' });
@@ -279,6 +369,10 @@ app.use((error, req, res, next) => {
   return res.status(500).json({ error: 'Ocurrió un error interno en el servidor.' });
 });
 
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`Portfolio disponible en http://localhost:${PORT}`);
-});
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, '127.0.0.1', () => {
+    console.log(`Portfolio disponible en http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

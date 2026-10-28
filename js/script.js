@@ -7,6 +7,11 @@ const respuesta = document.getElementById('respuesta');
 const listaProyectos = document.getElementById('listaProyectos');
 const formProyecto = document.getElementById('formProyecto');
 const estadoFormularioProyecto = document.getElementById('estadoFormularioProyecto');
+const apiBaseUrl = (window.PORTFOLIO_API_URL || '').replace(/\/+$/, '');
+
+if (apiBaseUrl) {
+  document.querySelector('.gestion-proyectos')?.setAttribute('hidden', '');
+}
 
 function mostrarMensajeProyectos(mensaje) {
   if (listaProyectos) {
@@ -19,7 +24,7 @@ function mostrarMensajeProyectos(mensaje) {
 }
 
 async function solicitarApi(url, opciones = {}) {
-  const response = await fetch(url, {
+  const response = await fetch(`${apiBaseUrl}${url}`, {
     ...opciones,
     headers: {
       ...(opciones.body ? { 'Content-Type': 'application/json' } : {}),
@@ -99,6 +104,9 @@ function crearTarjetaProyecto(proyecto) {
   botonEliminar.textContent = 'Eliminar';
 
   acciones.append(botonEditar, botonEliminar);
+  if (apiBaseUrl) {
+    acciones.hidden = true;
+  }
   tarjeta.append(acciones);
   return tarjeta;
 }
