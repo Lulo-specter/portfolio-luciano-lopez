@@ -107,41 +107,57 @@
     <section id="proyectos" class="seccion">
       <h2>Proyectos</h2>
 
-      <div class="grid-proyectos">
-
-        <article class="card">
-          <img src="img/vitalhome.jpeg" alt="VitalHome" width="400" height="400" class="logo-vitalhome">
-          <h3>VitalHome</h3>
-          <p>
-            Aplicación móvil de domótica para adultos mayores con funciones de
-            monitoreo, alertas y accesibilidad. Fue desarrollada en Android con Java,
-            con foco en la usabilidad y la seguridad del usuario.
-          </p>
-          <p><strong>Tecnologías:</strong> Java, Android, UX y accesibilidad</p>
-          <a class="enlace-proyecto" href="https://github.com/AndresP573/VitalHome" target="_blank" rel="noopener">Ver proyecto en GitHub</a>
-        </article>
-
-        <article class="card">
-          <h3>Sistema de gestión para gimnasio</h3>
-          <p>
-            Aplicación web para registrar profesores y alumnos por turno,
-            controlar el ingreso con DNI y avisar el estado de la cuota por WhatsApp.
-            Pensada para usarse desde una tablet y desde celulares.
-          </p>
-          <p><strong>Tecnologías:</strong> PHP, HTML, CSS, JavaScript</p>
-        </article>
-
-        <article class="card">
-          <img src="img/yerbateraC_M.jpg" alt="Yerbatera C&M" width="1200" height="896" class="logo-yerbatera">
-          <h3>Sistema de gestión para C&M</h3>
-          <p>
-            Sistema para registrar los kilos de yerba sin procesar, desarrollado
-            como trabajo final de Programación Orientada a Objetos.
-          </p>
-          <p><strong>Tecnologías:</strong> Java</p>
-        </article>
-
+      <div id="listaProyectos" class="grid-proyectos" aria-live="polite">
+        <p role="status">Cargando proyectos...</p>
       </div>
+
+      <details class="gestion-proyectos">
+        <summary>Administrar proyectos (demostración CRUD)</summary>
+        <p>Este formulario es una herramienta de demostración académica. No tiene inicio de sesión.</p>
+
+        <form id="formProyecto" class="formulario">
+          <input id="proyectoId" type="hidden">
+
+          <div class="campo">
+            <label for="proyectoNombre">Nombre</label>
+            <input id="proyectoNombre" name="nombre" type="text" maxlength="120" required>
+          </div>
+
+          <div class="campo">
+            <label for="proyectoDescripcion">Descripción</label>
+            <textarea id="proyectoDescripcion" name="descripcion" rows="4" maxlength="2000" required></textarea>
+          </div>
+
+          <div class="campo">
+            <label for="proyectoTecnologias">Tecnologías (separadas por coma)</label>
+            <input id="proyectoTecnologias" name="tecnologias" type="text" placeholder="Java, Android" required>
+          </div>
+
+          <div class="campo">
+            <label for="proyectoImagen">Imagen representativa (ruta local o URL)</label>
+            <input id="proyectoImagen" name="imagenUrl" type="text" placeholder="img/mi-proyecto.jpg">
+          </div>
+
+          <div class="campo">
+            <label for="proyectoEnlace">Enlace representativo (URL HTTP/HTTPS)</label>
+            <input id="proyectoEnlace" name="enlaceUrl" type="url" placeholder="https://...">
+          </div>
+
+          <div class="campo">
+            <label for="proyectoEstado">Estado de publicación</label>
+            <select id="proyectoEstado" name="estadoPublicacion">
+              <option value="publicado">Publicado</option>
+              <option value="borrador">Borrador</option>
+            </select>
+          </div>
+
+          <div class="acciones-formulario">
+            <button class="btn" type="submit">Guardar proyecto</button>
+            <button id="cancelarEdicion" class="btn btn-secundario" type="button" hidden>Cancelar edición</button>
+          </div>
+          <p id="estadoFormularioProyecto" class="respuesta" role="status" aria-live="polite"></p>
+        </form>
+      </details>
     </section>
 
     <!-- CONTACTO -->

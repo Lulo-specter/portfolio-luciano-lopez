@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title description">
+  <title id="title">Ilustración genérica de un gimnasio</title>
+  <desc id="description">Una mancuerna sobre un fondo cálido</desc>
+  <rect width="640" height="360" rx="24" fill="#fcfaf5"/>
+  <g fill="none" stroke="#963c27" stroke-linecap="round" stroke-linejoin="round" stroke-width="20">
+    <path d="M225 180h190"/>
+    <path d="M190 125v110M150 145v70M450 125v110M490 145v70"/>
+    <path d="M190 180h-40M450 180h40"/>
+  </g>
+  <circle cx="320" cy="180" r="118" fill="none" stroke="#d9d2c5" stroke-width="4"/>
+</svg>

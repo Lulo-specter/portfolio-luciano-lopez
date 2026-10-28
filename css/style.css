@@ -202,6 +202,72 @@ ol {
   overflow: hidden;
 }
 
+.proyecto-imagen {
+  width: 100%;
+  max-height: 240px;
+  margin: 0 auto 0.75rem;
+  object-fit: contain;
+}
+
+.gestion-proyectos {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.gestion-proyectos summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.gestion-proyectos .formulario {
+  margin-top: 1rem;
+}
+
+.acciones-formulario,
+.acciones-proyecto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.btn-secundario {
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.estado-proyecto {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.35rem 0;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.estado-proyecto::before {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.estado-publicado {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
 .enlace-proyecto {
   display: inline-block;
   margin-top: 0.5rem;
@@ -236,12 +302,22 @@ ol {
 }
 
 .campo input,
-.campo textarea {
+.campo textarea,
+.campo select {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 0.8rem 0.9rem;
   font: inherit;
+  background: var(--input);
+  color: var(--text);
+}
+
+.campo select {
+  cursor: pointer;
+}
+
+.campo select option {
   background: var(--input);
   color: var(--text);
 }
