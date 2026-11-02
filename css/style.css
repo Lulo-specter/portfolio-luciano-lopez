@@ -1,3 +1,4 @@
+/* Variables de color compartidas por el tema claro del sitio. */
 :root {
   --bg: #f3efe6;
   --panel: #fcfaf5;
@@ -11,10 +12,12 @@
   --action-text: #fffaf4;
 }
 
+/* Hace que padding y borde se incluyan en el ancho declarado de cada elemento. */
 * {
   box-sizing: border-box;
 }
 
+/* Ajustes globales de lectura, tipografia, colores y comportamiento de enlaces/imagenes. */
 html {
   scroll-behavior: smooth;
 }
@@ -42,6 +45,7 @@ img {
   display: block;
 }
 
+/* Barra superior fija y distribucion de los enlaces de navegacion. */
 .header {
   border-bottom: 1px solid var(--line);
   background: var(--panel);
@@ -50,6 +54,7 @@ img {
   z-index: 2;
 }
 
+/* Identidad visual, presentacion principal y botones reutilizables. */
 .nav {
   position: relative;
   max-width: 1100px;
@@ -100,6 +105,7 @@ img {
   color: var(--muted);
 }
 
+/* Secciones de contenido y bloques de informacion personal. */
 .hero {
   max-width: 1100px;
   margin: 0 auto;
@@ -188,6 +194,7 @@ ol {
   padding-left: 0;
 }
 
+/* Rejilla adaptable de proyectos y estilos de cada tarjeta. */
 .grid-proyectos {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -209,6 +216,7 @@ ol {
   object-fit: contain;
 }
 
+/* Panel de gestion, acciones y etiquetas de estado de los proyectos. */
 .gestion-proyectos {
   margin-top: 2rem;
   padding: 1.25rem;
@@ -234,6 +242,7 @@ ol {
   margin-top: 1rem;
 }
 
+/* El display flex de las acciones no debe anular el atributo hidden del navegador. */
 .acciones-proyecto[hidden] {
   display: none;
 }
@@ -299,6 +308,7 @@ ol {
   margin: 0 auto 0.75rem;
 }
 
+/* Controles compartidos por el formulario de proyectos y el de contacto. */
 .formulario {
   max-width: 700px;
   display: grid;
@@ -331,6 +341,7 @@ ol {
   color: var(--text);
 }
 
+/* Mensajes de validacion, respuestas del formulario y pie de pagina. */
 small {
   color: var(--muted);
 }
@@ -354,6 +365,7 @@ small {
   color: var(--muted);
 }
 
+/* Boton del menu: se oculta en escritorio y aparece en pantallas pequeñas. */
 .btn-menu {
   display: inline-flex;
   align-items: center;
@@ -373,6 +385,7 @@ small {
   display: none;
 }
 
+/* Cambios de distribucion para pantallas estrechas. */
 @media (max-width: 700px) {
   .hero {
     grid-template-columns: 1fr;

@@ -1,3 +1,4 @@
+// Dependencias locales: Express, rutas de archivos, pool PostgreSQL y carga inicial.
 const express = require('express');
 const path = require('node:path');
 const db = require('./db/connection');
@@ -15,6 +16,7 @@ const authJwksUrl = process.env.NEON_AUTH_JWKS_URL;
 const emailAdministrador = process.env.ADMIN_EMAIL?.trim().toLowerCase();
 let jose;
 let clavesRemotas;
+// CORS limita que sitios web puedan leer respuestas desde un navegador; no es autenticacion.
 const origenesPermitidos = new Set([
   'https://lulo-specter.github.io',
   'http://localhost:3000',
@@ -23,6 +25,7 @@ const origenesPermitidos = new Set([
 ].filter(Boolean));
 let baseLista;
 
+// Comparte la promesa de inicializacion entre solicitudes de la misma instancia.
 function asegurarBaseLista() {
   if (!baseLista) {
     baseLista = inicializarDatos(db);
@@ -31,6 +34,7 @@ function asegurarBaseLista() {
   return baseLista;
 }
 
+// Middleware CORS: valida origen, permite preflight OPTIONS y configura encabezados.
 app.use((req, res, next) => {
   const origen = req.get('Origin');
 
@@ -52,8 +56,10 @@ app.use((req, res, next) => {
   return next();
 });
 
+// Convierte cuerpos JSON en req.body y limita su tamano.
 app.use(express.json({ limit: '20kb' }));
 
+// Verifica el JWT de Neon y autoriza exclusivamente al administrador verificado.
 async function verificarAdministrador(req, res, obligatorio) {
   const authorization = req.get('Authorization');
   if (!authorization) {
@@ -123,6 +129,7 @@ async function autorizarAdministrador(req, res, next) {
   return next();
 }
 
+// Mantiene el modo de solo lectura configurable; en Vercel protege las escrituras con Auth.
 app.use('/api', (req, res, next) => {
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
     return next();
@@ -139,11 +146,13 @@ app.use('/api', (req, res, next) => {
   return next();
 });
 
+// Endpoint sencillo para comprobar que la funcion y la base responden.
 app.get('/api/salud', async (req, res) => {
   await asegurarBaseLista();
   return res.json({ ok: true, mensaje: 'Backend funcionando' });
 });
 
+// Obtiene las filas SQL y las agrupa por proyecto para devolver tecnologias como array.
 async function obtenerProyectos(incluirBorradores = false) {
   const soloPublicados = (apiSoloLectura || (apiEnVercel && !incluirBorradores))
     ? "WHERE p.estado_publicacion = 'publicado'"
@@ -187,6 +196,7 @@ async function obtenerProyectos(incluirBorradores = false) {
   return [...proyectos.values()];
 }
 
+// Normaliza y valida datos que llegan del formulario o de cualquier cliente HTTP.
 function validarProyecto(entrada) {
   if (!entrada || typeof entrada !== 'object' || Array.isArray(entrada)) {
     return { error: 'El cuerpo de la solicitud debe ser un objeto JSON.' };
@@ -256,6 +266,7 @@ function validarProyecto(entrada) {
   };
 }
 
+// Acepta solo enlaces web HTTP o HTTPS bien formados.
 function esUrlWeb(valor) {
   try {
     const url = new URL(valor);
@@ -265,6 +276,7 @@ function esUrlWeb(valor) {
   }
 }
 
+// Permite URL web o rutas relativas seguras para imagenes.
 function esImagenSegura(valor) {
   if (esUrlWeb(valor)) {
     return true;
@@ -276,6 +288,7 @@ function esImagenSegura(valor) {
     && !valor.split(/[\\/]/).includes('..');
 }
 
+// Crea o reutiliza tecnologias y vincula cada una con el proyecto indicado.
 async function guardarTecnologias(client, proyectoId, tecnologias) {
   for (const nombre of tecnologias) {
     await client.query(`
@@ -296,6 +309,7 @@ async function guardarTecnologias(client, proyectoId, tecnologias) {
   }
 }
 
+// Ejecuta varias consultas como una unidad: confirma todo o revierte todo.
 async function conTransaccion(operacion) {
   const client = await db.connect();
 
@@ -312,6 +326,7 @@ async function conTransaccion(operacion) {
   }
 }
 
+// CRUD: lectura de la lista y de un elemento por identificador.
 app.get('/api/proyectos', async (req, res) => {
   await asegurarBaseLista();
   const esAdministrador = apiEnVercel
@@ -346,6 +361,7 @@ app.get('/api/proyectos/:id', async (req, res) => {
   return res.json(proyecto);
 });
 
+// Alta: valida, inserta proyecto y relaciones dentro de la misma transaccion.
 app.post('/api/proyectos', async (req, res) => {
   await asegurarBaseLista();
   const resultado = validarProyecto(req.body);
@@ -376,6 +392,7 @@ app.post('/api/proyectos', async (req, res) => {
   return res.status(201).json(creado);
 });
 
+// Edicion completa: actualiza los campos y reemplaza las relaciones de tecnologias.
 app.put('/api/proyectos/:id', async (req, res) => {
   await asegurarBaseLista();
   const id = Number(req.params.id);
@@ -424,6 +441,7 @@ app.put('/api/proyectos/:id', async (req, res) => {
   return res.json(actualizado);
 });
 
+// Baja: PostgreSQL elimina tambien relaciones dependientes mediante ON DELETE CASCADE.
 app.delete('/api/proyectos/:id', async (req, res) => {
   await asegurarBaseLista();
   const id = Number(req.params.id);
@@ -439,6 +457,7 @@ app.delete('/api/proyectos/:id', async (req, res) => {
   return res.status(204).end();
 });
 
+// En local Express sirve los archivos estaticos; Vercel aloja solo la API.
 if (process.env.VERCEL !== '1') {
   app.use('/css', express.static(path.join(raizPortfolio, 'css')));
   app.use('/js', express.static(path.join(raizPortfolio, 'js')));
@@ -453,10 +472,12 @@ if (process.env.VERCEL !== '1') {
   });
 }
 
+// Respuesta 404 especifica para rutas desconocidas bajo /api.
 app.use('/api', (req, res) => {
   res.status(404).json({ error: 'La ruta de la API no existe.' });
 });
 
+// Convierte errores conocidos del parser en respuestas HTTP claras y registra los demas.
 app.use((error, req, res, next) => {
   if (error.type === 'entity.parse.failed') {
     return res.status(400).json({ error: 'El cuerpo enviado no contiene JSON válido.' });
@@ -470,6 +491,7 @@ app.use((error, req, res, next) => {
   return res.status(500).json({ error: 'Ocurrió un error interno en el servidor.' });
 });
 
+// En Vercel la plataforma administra la funcion; en local se inicia un servidor HTTP.
 if (process.env.VERCEL !== '1') {
   app.listen(PORT, '127.0.0.1', () => {
     console.log(`Portfolio disponible en http://localhost:${PORT}`);

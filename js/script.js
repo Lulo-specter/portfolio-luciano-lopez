@@ -1,3 +1,4 @@
+// Referencias a elementos del HTML que JavaScript actualiza o escucha.
 const btnMenu = document.getElementById('btnMenu');
 const menu = document.getElementById('menu');
 const formContacto = document.getElementById('formContacto');
@@ -7,6 +8,7 @@ const respuesta = document.getElementById('respuesta');
 const listaProyectos = document.getElementById('listaProyectos');
 const formProyecto = document.getElementById('formProyecto');
 const estadoFormularioProyecto = document.getElementById('estadoFormularioProyecto');
+// Quita barras finales para unir el dominio y las rutas sin producir una doble barra.
 const apiBaseUrl = (window.PORTFOLIO_API_URL || '').replace(/\/+$/, '');
 const authClient = window.portfolioAuth;
 const panelAutenticacion = document.getElementById('panelAutenticacion');
@@ -17,12 +19,14 @@ const crudProyectos = document.getElementById('crudProyectos');
 let emailPendienteVerificacion = '';
 let modoRegistro = false;
 
+// En la web publicada se muestra el acceso; el backend decide quién puede escribir.
 if (apiBaseUrl) {
   window.portfolioAdminAuthenticated = false;
   panelAutenticacion.hidden = false;
   crudProyectos.hidden = true;
 }
 
+// Muestra estados vacios o errores de forma accesible dentro de la lista.
 function mostrarMensajeProyectos(mensaje) {
   if (listaProyectos) {
     listaProyectos.replaceChildren();
@@ -33,6 +37,7 @@ function mostrarMensajeProyectos(mensaje) {
   }
 }
 
+// Centraliza fetch, JSON y errores HTTP para reutilizar la misma logica en todo el CRUD.
 async function solicitarApi(url, opciones = {}) {
   const headers = {
     ...(opciones.body ? { 'Content-Type': 'application/json' } : {}),
@@ -65,10 +70,12 @@ async function solicitarApi(url, opciones = {}) {
   return datos;
 }
 
+// Construye una tarjeta usando nodos de texto para no interpretar datos como HTML.
 function crearTarjetaProyecto(proyecto) {
   const tarjeta = document.createElement('article');
   tarjeta.className = 'card';
 
+  // La imagen y el enlace son opcionales en los datos recibidos.
   if (proyecto.imagenUrl) {
     const imagen = document.createElement('img');
     imagen.src = proyecto.imagenUrl;
@@ -107,6 +114,7 @@ function crearTarjetaProyecto(proyecto) {
     tarjeta.append(enlace);
   }
 
+  // El servidor también protege cada escritura; ocultar acciones mejora la interfaz pública.
   const acciones = document.createElement('div');
   acciones.className = 'acciones-proyecto';
 
@@ -130,6 +138,7 @@ function crearTarjetaProyecto(proyecto) {
   return tarjeta;
 }
 
+// Pide el listado a la API y reemplaza el contenido de la pagina con sus tarjetas.
 async function cargarProyectos() {
   if (!listaProyectos) {
     return;
@@ -153,6 +162,7 @@ async function cargarProyectos() {
   }
 }
 
+// Copia un proyecto existente al formulario y abre el panel para editarlo.
 function prepararEdicion(proyecto) {
   document.getElementById('proyectoId').value = proyecto.id;
   document.getElementById('proyectoNombre').value = proyecto.nombre;
@@ -167,6 +177,7 @@ function prepararEdicion(proyecto) {
   estadoFormularioProyecto.textContent = `Editando: ${proyecto.nombre}`;
 }
 
+// Restablece el formulario a sus valores iniciales despues de guardar o cancelar.
 function limpiarFormularioProyecto() {
   formProyecto.reset();
   document.getElementById('proyectoId').value = '';
@@ -375,6 +386,7 @@ if (apiBaseUrl && authClient) {
 }
 
 if (listaProyectos) {
+  // Un unico listener gestiona los botones de todas las tarjetas (delegacion de eventos).
   listaProyectos.addEventListener('click', async (event) => {
     const boton = event.target.closest('button[data-accion]');
     if (!boton) {
@@ -401,6 +413,7 @@ if (listaProyectos) {
 }
 
 if (formProyecto) {
+  // Convierte el formulario en JSON y elige POST (alta) o PUT (edicion) segun el id.
   formProyecto.addEventListener('submit', async (event) => {
     event.preventDefault();
 
@@ -435,9 +448,11 @@ if (formProyecto) {
 document.getElementById('cancelarEdicion')?.addEventListener('click', limpiarFormularioProyecto);
 
 if (listaProyectos) {
+  // Inicia la carga de datos una vez que el documento y sus scripts estan listos.
   cargarProyectos();
 }
 
+// Control accesible del menu movil y cierre con enlace, click exterior o tecla Escape.
 if (btnMenu && menu) {
   const cerrarMenu = () => {
     menu.classList.remove('menu-visible');
@@ -471,6 +486,7 @@ if (btnMenu && menu) {
   });
 }
 
+// Actualiza el contador a medida que se escribe el mensaje de contacto.
 if (mensaje && contador) {
   mensaje.addEventListener('input', () => {
     contador.textContent = mensaje.value.length;
@@ -478,6 +494,7 @@ if (mensaje && contador) {
 }
 
 if (formContacto) {
+  // Valida campos en el navegador; Formspree recibe el formulario si todos son validos.
   formContacto.addEventListener('submit', (event) => {
     const nombre = document.getElementById('nombre');
     const email = document.getElementById('email');

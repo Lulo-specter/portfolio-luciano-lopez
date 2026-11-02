@@ -1,16 +1,21 @@
+// Carga los proyectos demostrativos solo si la tabla esta vacia.
 async function inicializarDatos(db) {
   const client = await db.connect();
 
   try {
+    // La transaccion evita que una carga parcial quede guardada si ocurre un error.
     await client.query('BEGIN');
+    // Evita que dos instancias concurrentes inicialicen los mismos datos a la vez.
     await client.query('SELECT pg_advisory_xact_lock($1, $2)', [74192, 1]);
 
+    // Si ya existe algun proyecto, la semilla no agrega ni sobrescribe informacion.
     const cantidad = await client.query('SELECT COUNT(*) AS total FROM proyectos');
     if (Number(cantidad.rows[0].total) > 0) {
       await client.query('COMMIT');
       return;
     }
 
+    // Contenido inicial de muestra; las tecnologias se relacionan mas abajo.
     const proyectosIniciales = [
       {
         nombre: 'VitalHome',
@@ -35,6 +40,7 @@ async function inicializarDatos(db) {
       },
     ];
 
+    // Inserta cada proyecto, reutiliza tecnologias y crea sus relaciones.
     for (const proyecto of proyectosIniciales) {
       const insercion = await client.query(`
         INSERT INTO proyectos (
@@ -68,11 +74,14 @@ async function inicializarDatos(db) {
       }
     }
 
+    // Confirma todos los proyectos y relaciones como una sola unidad.
     await client.query('COMMIT');
   } catch (error) {
+    // Ante cualquier fallo, deshace los cambios incompletos y propaga el error.
     await client.query('ROLLBACK');
     throw error;
   } finally {
+    // Devuelve siempre la conexion al pool, haya ocurrido un error o no.
     client.release();
   }
 }

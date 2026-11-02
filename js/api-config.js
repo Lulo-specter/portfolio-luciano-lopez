@@ -1,3 +1,5 @@
+
+// Origen publico de la API; nunca colocar aqui DATABASE_URL ni otras credenciales.
 const esEntornoLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
 window.PORTFOLIO_API_URL = esEntornoLocal
   ? ''
