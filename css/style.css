@@ -234,6 +234,15 @@ ol {
   margin-top: 1rem;
 }
 
+.acciones-proyecto[hidden] {
+  display: none;
+}
+
+.formulario[hidden],
+.campo[hidden] {
+  display: none;
+}
+
 .btn-secundario {
   background: var(--panel);
   color: var(--text);

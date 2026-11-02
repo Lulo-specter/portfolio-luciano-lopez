@@ -8,9 +8,19 @@ const listaProyectos = document.getElementById('listaProyectos');
 const formProyecto = document.getElementById('formProyecto');
 const estadoFormularioProyecto = document.getElementById('estadoFormularioProyecto');
 const apiBaseUrl = (window.PORTFOLIO_API_URL || '').replace(/\/+$/, '');
+const authClient = window.portfolioAuth;
+const panelAutenticacion = document.getElementById('panelAutenticacion');
+const formularioAutenticacion = document.getElementById('formAutenticacion');
+const formularioVerificacionEmail = document.getElementById('formVerificacionEmail');
+const mensajeAutenticacion = document.getElementById('mensajeAutenticacion');
+const crudProyectos = document.getElementById('crudProyectos');
+let emailPendienteVerificacion = '';
+let modoRegistro = false;
 
 if (apiBaseUrl) {
-  document.querySelector('.gestion-proyectos')?.setAttribute('hidden', '');
+  window.portfolioAdminAuthenticated = false;
+  panelAutenticacion.hidden = false;
+  crudProyectos.hidden = true;
 }
 
 function mostrarMensajeProyectos(mensaje) {
@@ -24,12 +34,23 @@ function mostrarMensajeProyectos(mensaje) {
 }
 
 async function solicitarApi(url, opciones = {}) {
+  const headers = {
+    ...(opciones.body ? { 'Content-Type': 'application/json' } : {}),
+    ...opciones.headers,
+  };
+
+  if (apiBaseUrl && window.portfolioAdminAuthenticated) {
+    const { data, error } = await authClient.token();
+    if (error || !data?.token) {
+      throw new Error(error?.message || 'No se pudo obtener el token de administrador.');
+    }
+
+    headers.Authorization = `Bearer ${data.token}`;
+  }
+
   const response = await fetch(`${apiBaseUrl}${url}`, {
     ...opciones,
-    headers: {
-      ...(opciones.body ? { 'Content-Type': 'application/json' } : {}),
-      ...opciones.headers,
-    },
+    headers,
   });
 
   if (response.status === 204) {
@@ -104,9 +125,7 @@ function crearTarjetaProyecto(proyecto) {
   botonEliminar.textContent = 'Eliminar';
 
   acciones.append(botonEditar, botonEliminar);
-  if (apiBaseUrl) {
-    acciones.hidden = true;
-  }
+  acciones.hidden = apiBaseUrl && !window.portfolioAdminAuthenticated;
   tarjeta.append(acciones);
   return tarjeta;
 }
@@ -154,6 +173,205 @@ function limpiarFormularioProyecto() {
   document.getElementById('proyectoEstado').value = 'publicado';
   document.getElementById('cancelarEdicion').hidden = true;
   estadoFormularioProyecto.textContent = '';
+}
+
+function actualizarInterfazSesion(usuario, esAdministrador) {
+  const sesionActiva = Boolean(usuario);
+
+  window.portfolioAdminAuthenticated = esAdministrador;
+  formularioAutenticacion.hidden = sesionActiva;
+  formularioVerificacionEmail.hidden = true;
+  document.getElementById('sesionAdministrador').hidden = !sesionActiva;
+  document.getElementById('emailSesionAdministrador').textContent = usuario?.email || '';
+  crudProyectos.hidden = Boolean(apiBaseUrl) && !esAdministrador;
+
+  if (sesionActiva && !esAdministrador) {
+    mensajeAutenticacion.textContent = 'Esta cuenta no tiene permisos de administración.';
+  }
+
+  document.querySelectorAll('.acciones-proyecto').forEach((acciones) => {
+    acciones.hidden = Boolean(apiBaseUrl) && !esAdministrador;
+  });
+
+  if (!sesionActiva) {
+    formularioAutenticacion.hidden = false;
+    modoRegistro = false;
+    document.getElementById('campoNombreAdministrador').hidden = true;
+    document.getElementById('nombreAdministrador').required = false;
+    document.getElementById('passwordAdministrador').autocomplete = 'current-password';
+    document.getElementById('enviarAutenticacion').textContent = 'Iniciar sesión';
+    document.getElementById('cambiarModoAutenticacion').textContent = 'Crear cuenta de administrador';
+  }
+}
+
+async function establecerSesion(usuario) {
+  const esAdministrador = typeof usuario?.email === 'string'
+    && usuario.email.trim().toLowerCase() === window.PORTFOLIO_ADMIN_EMAIL.toLowerCase()
+    && usuario.emailVerified === true;
+
+  if (esAdministrador) {
+    const { data, error } = await authClient.token();
+    if (error || !data?.token) {
+      throw new Error(error?.message || 'No se pudo obtener el token de administrador.');
+    }
+  }
+
+  actualizarInterfazSesion(usuario, esAdministrador);
+  await cargarProyectos();
+}
+
+function mostrarErrorAutenticacion(error) {
+  console.error('Error de autenticación:', error);
+  mensajeAutenticacion.textContent = error.message || 'No se pudo completar la autenticación.';
+}
+
+if (apiBaseUrl && authClient) {
+  formularioAutenticacion.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    mensajeAutenticacion.textContent = '';
+
+    const email = document.getElementById('emailAdministrador').value.trim();
+    const password = document.getElementById('passwordAdministrador').value;
+
+    try {
+      if (modoRegistro) {
+        if (email.toLowerCase() !== window.PORTFOLIO_ADMIN_EMAIL.toLowerCase()) {
+          throw new Error('El registro está limitado a la cuenta administradora autorizada.');
+        }
+
+        const nombre = document.getElementById('nombreAdministrador').value.trim();
+        const { error } = await authClient.signUp.email({ email, password, name: nombre });
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        emailPendienteVerificacion = email;
+        formularioAutenticacion.hidden = true;
+        formularioVerificacionEmail.hidden = false;
+        mensajeAutenticacion.textContent = 'Te enviamos un código. Revisá tu correo para verificar la cuenta.';
+        document.getElementById('codigoVerificacionEmail').focus();
+        return;
+      }
+
+      const { data, error } = await authClient.signIn.email({ email, password, rememberMe: true });
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      await establecerSesion(data?.user);
+    } catch (error) {
+      mostrarErrorAutenticacion(error);
+    }
+  });
+
+  document.getElementById('cambiarModoAutenticacion').addEventListener('click', () => {
+    modoRegistro = !modoRegistro;
+    const campoNombre = document.getElementById('campoNombreAdministrador');
+    const nombre = document.getElementById('nombreAdministrador');
+    const password = document.getElementById('passwordAdministrador');
+
+    campoNombre.hidden = !modoRegistro;
+    nombre.required = modoRegistro;
+    password.autocomplete = modoRegistro ? 'new-password' : 'current-password';
+    document.getElementById('enviarAutenticacion').textContent = modoRegistro
+      ? 'Crear cuenta'
+      : 'Iniciar sesión';
+    document.getElementById('cambiarModoAutenticacion').textContent = modoRegistro
+      ? 'Ya tengo una cuenta'
+      : 'Crear cuenta de administrador';
+    mensajeAutenticacion.textContent = '';
+  });
+
+  formularioVerificacionEmail.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    mensajeAutenticacion.textContent = '';
+
+    try {
+      const otp = document.getElementById('codigoVerificacionEmail').value.trim();
+      const { error } = await authClient.emailOtp.verifyEmail({
+        email: emailPendienteVerificacion,
+        otp,
+      });
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      mensajeAutenticacion.textContent = 'Email verificado.';
+      const { data, error: errorSesion } = await authClient.getSession();
+      if (errorSesion) {
+        throw new Error(errorSesion.message);
+      }
+
+      const usuario = data?.user || data?.session?.user;
+      if (usuario) {
+        await establecerSesion(usuario);
+      } else {
+        formularioVerificacionEmail.hidden = true;
+        formularioAutenticacion.hidden = false;
+        document.getElementById('emailAdministrador').value = emailPendienteVerificacion;
+        modoRegistro = false;
+        document.getElementById('campoNombreAdministrador').hidden = true;
+        document.getElementById('nombreAdministrador').required = false;
+        document.getElementById('passwordAdministrador').autocomplete = 'current-password';
+        document.getElementById('enviarAutenticacion').textContent = 'Iniciar sesión';
+        document.getElementById('cambiarModoAutenticacion').textContent = 'Crear cuenta de administrador';
+        mensajeAutenticacion.textContent = 'Ya podés iniciar sesión con tu cuenta verificada.';
+      }
+    } catch (error) {
+      mostrarErrorAutenticacion(error);
+    }
+  });
+
+  document.getElementById('reenviarCodigoVerificacion').addEventListener('click', async () => {
+    try {
+      const { error } = await authClient.emailOtp.sendVerificationOtp({
+        email: emailPendienteVerificacion,
+        type: 'email-verification',
+      });
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      mensajeAutenticacion.textContent = 'Enviamos otro código de verificación.';
+    } catch (error) {
+      mostrarErrorAutenticacion(error);
+    }
+  });
+
+  document.getElementById('cancelarVerificacionEmail').addEventListener('click', () => {
+    formularioVerificacionEmail.hidden = true;
+    formularioAutenticacion.hidden = false;
+    mensajeAutenticacion.textContent = '';
+  });
+
+  document.getElementById('cerrarSesionAdministrador').addEventListener('click', async () => {
+    try {
+      const { error } = await authClient.signOut();
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      actualizarInterfazSesion(null, false);
+      limpiarFormularioProyecto();
+      mensajeAutenticacion.textContent = 'Sesión cerrada.';
+      await cargarProyectos();
+    } catch (error) {
+      mostrarErrorAutenticacion(error);
+    }
+  });
+
+  authClient.getSession().then(async ({ data, error }) => {
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const usuario = data?.user || data?.session?.user;
+    if (usuario) {
+      await establecerSesion(usuario);
+    }
+  }).catch(mostrarErrorAutenticacion);
+} else if (apiBaseUrl) {
+  mensajeAutenticacion.textContent = 'No se cargó el cliente de autenticación. Volvé a generar el bundle.';
 }
 
 if (listaProyectos) {

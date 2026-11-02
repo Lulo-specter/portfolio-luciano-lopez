@@ -6,7 +6,15 @@ const inicializarDatos = require('./db/seed');
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const raizPortfolio = path.resolve(__dirname, '..');
-const apiSoloLectura = process.env.VERCEL === '1' || process.env.READ_ONLY_API === 'true';
+const apiEnVercel = process.env.VERCEL === '1';
+const apiSoloLectura = process.env.READ_ONLY_API === 'true';
+const authIssuer = process.env.NEON_AUTH_BASE_URL
+  ? new URL(process.env.NEON_AUTH_BASE_URL).origin
+  : null;
+const authJwksUrl = process.env.NEON_AUTH_JWKS_URL;
+const emailAdministrador = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+let jose;
+let clavesRemotas;
 const origenesPermitidos = new Set([
   'https://lulo-specter.github.io',
   'http://localhost:3000',
@@ -34,7 +42,7 @@ app.use((req, res, next) => {
     res.set('Access-Control-Allow-Origin', origen);
     res.set('Vary', 'Origin');
     res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
 
   if (req.method === 'OPTIONS') {
@@ -46,9 +54,86 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '20kb' }));
 
+async function verificarAdministrador(req, res, obligatorio) {
+  const authorization = req.get('Authorization');
+  if (!authorization) {
+    if (obligatorio) {
+      res.status(401).json({ error: 'Iniciá sesión para administrar proyectos.' });
+      return null;
+    }
+
+    return false;
+  }
+
+  const coincidencia = authorization.match(/^Bearer\s+([^\s]+)$/i);
+  if (!coincidencia) {
+    res.status(401).json({ error: 'El token de autenticación no es válido.' });
+    return null;
+  }
+
+  if (!authIssuer || !authJwksUrl || !emailAdministrador) {
+    res.status(503).json({ error: 'La autenticación del administrador no está configurada.' });
+    return null;
+  }
+
+  try {
+    jose ??= await import('jose');
+    clavesRemotas ??= jose.createRemoteJWKSet(new URL(authJwksUrl));
+    const { payload } = await jose.jwtVerify(coincidencia[1], clavesRemotas, {
+      issuer: authIssuer,
+      audience: authIssuer,
+    });
+
+    const esAdministrador = payload.emailVerified === true
+      && typeof payload.email === 'string'
+      && payload.email.trim().toLowerCase() === emailAdministrador;
+
+    if (!esAdministrador && obligatorio) {
+      res.status(403).json({ error: 'Esta cuenta no tiene permisos para administrar proyectos.' });
+      return null;
+    }
+
+    return esAdministrador;
+  } catch (error) {
+    const erroresTokenInvalido = [
+      jose?.errors?.JWTExpired,
+      jose?.errors?.JWTClaimValidationFailed,
+      jose?.errors?.JWTInvalid,
+      jose?.errors?.JWSInvalid,
+      jose?.errors?.JWSSignatureVerificationFailed,
+      jose?.errors?.JWKSNoMatchingKey,
+    ];
+    if (erroresTokenInvalido.some((tipoError) => tipoError && error instanceof tipoError)) {
+      res.status(401).json({ error: 'La sesión no es válida o expiró. Iniciá sesión nuevamente.' });
+      return null;
+    }
+
+    console.error('No se pudo verificar el JWT de Neon Auth:', error);
+    res.status(503).json({ error: 'No se pudo comprobar la autenticación. Intentá nuevamente.' });
+    return null;
+  }
+}
+
+async function autorizarAdministrador(req, res, next) {
+  const autorizado = await verificarAdministrador(req, res, true);
+  if (!autorizado) {
+    return;
+  }
+
+  return next();
+}
+
 app.use('/api', (req, res, next) => {
-  if (apiSoloLectura && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-    return res.status(403).json({ error: 'La API pública solo permite consultar proyectos.' });
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+    return next();
+  }
+
+  if (apiSoloLectura) {
+    return res.status(403).json({ error: 'La API está configurada como solo lectura.' });
+  }
+
+  if (apiEnVercel) {
+    return autorizarAdministrador(req, res, next);
   }
 
   return next();
@@ -59,8 +144,10 @@ app.get('/api/salud', async (req, res) => {
   return res.json({ ok: true, mensaje: 'Backend funcionando' });
 });
 
-async function obtenerProyectos() {
-  const soloPublicados = apiSoloLectura ? "WHERE p.estado_publicacion = 'publicado'" : '';
+async function obtenerProyectos(incluirBorradores = false) {
+  const soloPublicados = (apiSoloLectura || (apiEnVercel && !incluirBorradores))
+    ? "WHERE p.estado_publicacion = 'publicado'"
+    : '';
   const resultado = await db.query(`
     SELECT
       p.id,
@@ -227,17 +314,31 @@ async function conTransaccion(operacion) {
 
 app.get('/api/proyectos', async (req, res) => {
   await asegurarBaseLista();
-  return res.json(await obtenerProyectos());
+  const esAdministrador = apiEnVercel
+    ? await verificarAdministrador(req, res, false)
+    : false;
+  if (esAdministrador === null) {
+    return;
+  }
+
+  return res.json(await obtenerProyectos(esAdministrador));
 });
 
 app.get('/api/proyectos/:id', async (req, res) => {
   await asegurarBaseLista();
+  const esAdministrador = apiEnVercel
+    ? await verificarAdministrador(req, res, false)
+    : false;
+  if (esAdministrador === null) {
+    return;
+  }
+
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id < 1) {
     return res.status(400).json({ error: 'El identificador debe ser un número entero positivo.' });
   }
 
-  const proyecto = (await obtenerProyectos()).find((elemento) => elemento.id === id);
+  const proyecto = (await obtenerProyectos(esAdministrador)).find((elemento) => elemento.id === id);
   if (!proyecto) {
     return res.status(404).json({ error: 'No se encontró el proyecto.' });
   }

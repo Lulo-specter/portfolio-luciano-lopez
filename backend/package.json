@@ -14,7 +14,8 @@
   "type": "commonjs",
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
-    "express": "^5.3.0"
+    "express": "^5.3.0",
+    "jose": "^6.2.13"
   },
   "devDependencies": {
     "typescript": "^7.0.2"

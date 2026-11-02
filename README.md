@@ -17,7 +17,7 @@ Este proyecto fue desarrollado como actividad integradora de la Unidad 3. Tiene 
 - Sección sobre mí
 - Sección de proyectos cargada desde PostgreSQL
 - API con operaciones CRUD para proyectos
-- Formulario sencillo para crear, editar y eliminar proyectos
+- Administración de proyectos con inicio de sesión y cuenta autorizada
 - Formulario de contacto conectado a Formspree, con validación de campos
 - Menú responsive
 - Contador de caracteres del mensaje
@@ -53,18 +53,18 @@ El cuerpo de creación y actualización es JSON, con `nombre`, `descripcion`, `t
 Se eligió PostgreSQL, una base relacional alojada en Neon. `proyectos` y `tecnologias` se relacionan muchos a muchos mediante `proyecto_tecnologia`, lo que permite que varios proyectos compartan tecnologías y que cada proyecto tenga varias tecnologías. La URL de conexión se configura como secreto y no se escribe en el frontend ni se sube al repositorio.
 
 ## Alcance de seguridad
-El CRUD de esta actividad es una demostración educativa local y no tiene autenticación. En Vercel la API se ejecuta en modo de solo lectura y solo permite consultar proyectos publicados; las escrituras y eliminaciones se rechazan en el servidor. El formulario de gestión sigue disponible al ejecutar localmente el backend.
+El CRUD local sigue disponible para practicar sin autenticación. En Vercel, cualquier visitante puede consultar los proyectos publicados; las operaciones de creación, edición y eliminación exigen un JWT válido de Neon Auth, un email verificado y coincidencia con `ADMIN_EMAIL`. Los borradores solo se devuelven a esa cuenta. CORS y los controles visuales del frontend no sustituyen esta autorización del servidor.
 
 ## Publicación
 GitHub Pages continúa alojando el frontend estático. Vercel aloja únicamente la API Express con la carpeta `backend` como raíz del proyecto; Neon aloja PostgreSQL.
 
 1. Crear la base en Neon y ejecutar `backend/db/schema.sql` en el SQL Editor.
 2. Desplegar el proyecto en Vercel seleccionando `backend` como Root Directory.
-3. Configurar `DATABASE_URL` y `FRONTEND_ORIGIN` (`https://lulo-specter.github.io`) en Environment Variables de Vercel. No publicar ni compartir `DATABASE_URL`.
+3. Configurar `DATABASE_URL`, `FRONTEND_ORIGIN` (`https://lulo-specter.github.io`), `NEON_AUTH_BASE_URL`, `NEON_AUTH_JWKS_URL` y `ADMIN_EMAIL` en Environment Variables de Vercel. `DATABASE_URL` es secreto; las URLs de Auth/JWKS y el email administrador no son contraseñas.
 4. Copiar el dominio asignado por Vercel a `window.PORTFOLIO_API_URL` en `js/api-config.js`.
-5. Publicar los cambios del frontend en GitHub Pages.
+5. Desde la raíz del repositorio, ejecutar `npm.cmd install` y `npm.cmd run build:auth` para generar `js/auth-client.bundle.js`; luego publicar los cambios del frontend en GitHub Pages.
 
-La API permite solicitudes de navegador desde los orígenes configurados. En Vercel, además, rechaza en el servidor POST, PUT, PATCH y DELETE; los proyectos publicados se pueden consultar públicamente. El frontend alojado oculta los controles de gestión; el CRUD sigue disponible localmente.
+En la rama de Neon, Neon Auth debe tener habilitada la verificación de email con códigos OTP y debe confiar en el origen `https://lulo-specter.github.io`. La página permite crear la cuenta administradora con un código enviado al correo y luego iniciar/cerrar sesión. El backend verifica los JWT con el JWKS de esa rama. La API solo permite solicitudes de navegador desde los orígenes configurados.
 
 Para entender el funcionamiento archivo por archivo y preparar la defensa, consultar `EXPLICACION_BACKEND_FRONTEND.txt`.
 

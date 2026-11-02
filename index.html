@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&family=Lora:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script src="js/api-config.js" defer></script>
+  <script src="js/auth-client.bundle.js" defer></script>
   <script src="js/script.js" defer></script>
 </head>
 <body>
@@ -112,9 +113,55 @@
         <p role="status">Cargando proyectos...</p>
       </div>
 
-      <details class="gestion-proyectos">
-        <summary>Administrar proyectos (demostración CRUD)</summary>
-        <p>Este formulario es una herramienta de demostración académica. No tiene inicio de sesión.</p>
+      <details id="panelGestionProyectos" class="gestion-proyectos">
+        <summary>Administrar proyectos</summary>
+
+        <section id="panelAutenticacion" aria-label="Acceso de administración" hidden>
+          <p>Iniciá sesión con la cuenta autorizada para administrar los proyectos.</p>
+
+          <form id="formAutenticacion" class="formulario">
+            <div id="campoNombreAdministrador" class="campo" hidden>
+              <label for="nombreAdministrador">Nombre</label>
+              <input id="nombreAdministrador" type="text" autocomplete="name" maxlength="100">
+            </div>
+
+            <div class="campo">
+              <label for="emailAdministrador">Email</label>
+              <input id="emailAdministrador" type="email" autocomplete="email" required>
+            </div>
+
+            <div class="campo">
+              <label for="passwordAdministrador">Contraseña</label>
+              <input id="passwordAdministrador" type="password" autocomplete="current-password" minlength="8" required>
+            </div>
+
+            <div class="acciones-formulario">
+              <button id="enviarAutenticacion" class="btn" type="submit">Iniciar sesión</button>
+              <button id="cambiarModoAutenticacion" class="btn btn-secundario" type="button">Crear cuenta de administrador</button>
+            </div>
+          </form>
+
+          <form id="formVerificacionEmail" class="formulario" hidden>
+            <div class="campo">
+              <label for="codigoVerificacionEmail">Código enviado a tu email</label>
+              <input id="codigoVerificacionEmail" type="text" inputmode="numeric" autocomplete="one-time-code" required>
+            </div>
+            <div class="acciones-formulario">
+              <button class="btn" type="submit">Verificar email</button>
+              <button id="reenviarCodigoVerificacion" class="btn btn-secundario" type="button">Reenviar código</button>
+              <button id="cancelarVerificacionEmail" class="btn btn-secundario" type="button">Volver</button>
+            </div>
+          </form>
+
+          <div id="sesionAdministrador" hidden>
+            <p>Sesión iniciada como <span id="emailSesionAdministrador"></span>.</p>
+            <button id="cerrarSesionAdministrador" class="btn btn-secundario" type="button">Cerrar sesión</button>
+          </div>
+          <p id="mensajeAutenticacion" class="respuesta" role="status" aria-live="polite"></p>
+        </section>
+
+        <div id="crudProyectos">
+        <p>En producción, la escritura está limitada a la cuenta administradora; en local queda habilitada para pruebas.</p>
 
         <form id="formProyecto" class="formulario">
           <input id="proyectoId" type="hidden">
@@ -158,6 +205,7 @@
           </div>
           <p id="estadoFormularioProyecto" class="respuesta" role="status" aria-live="polite"></p>
         </form>
+        </div>
       </details>
     </section>
 
