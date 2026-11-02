@@ -18,6 +18,7 @@ Este proyecto fue desarrollado como actividad integradora de la Unidad 3. Tiene 
 - Sección de proyectos cargada desde PostgreSQL
 - API con operaciones CRUD para proyectos
 - Administración de proyectos con inicio de sesión y cuenta autorizada
+- Recuperación de contraseña por correo electrónico
 - Formulario de contacto conectado a Formspree, con validación de campos
 - Menú responsive
 - Contador de caracteres del mensaje
@@ -64,7 +65,7 @@ GitHub Pages continúa alojando el frontend estático. Vercel aloja únicamente 
 4. Copiar el dominio asignado por Vercel a `window.PORTFOLIO_API_URL` en `js/api-config.js`.
 5. Desde la raíz del repositorio, ejecutar `npm.cmd install` y `npm.cmd run build:auth` para generar `js/auth-client.bundle.js`; luego publicar los cambios del frontend en GitHub Pages.
 
-En la rama de Neon, Neon Auth debe tener habilitada la verificación de email con códigos OTP y debe confiar en el origen `https://lulo-specter.github.io`. La página permite crear la cuenta administradora con un código enviado al correo y luego iniciar/cerrar sesión. El backend verifica los JWT con el JWKS de esa rama. La API solo permite solicitudes de navegador desde los orígenes configurados.
+En la rama de Neon, Neon Auth debe tener habilitada la verificación de email con códigos OTP y debe confiar en el origen `https://lulo-specter.github.io`. La página permite crear la cuenta administradora con un código enviado al correo, iniciar/cerrar sesión y solicitar un enlace de restablecimiento de contraseña. El enlace de recuperación vence a los 15 minutos. El backend verifica los JWT con el JWKS de esa rama. La API solo permite solicitudes de navegador desde los orígenes configurados.
 
 Para entender el funcionamiento archivo por archivo y preparar la defensa, consultar `EXPLICACION_BACKEND_FRONTEND.txt`.
 

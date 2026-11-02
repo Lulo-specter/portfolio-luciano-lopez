@@ -13,17 +13,39 @@ const apiBaseUrl = (window.PORTFOLIO_API_URL || '').replace(/\/+$/, '');
 const authClient = window.portfolioAuth;
 const panelAutenticacion = document.getElementById('panelAutenticacion');
 const formularioAutenticacion = document.getElementById('formAutenticacion');
+const formularioRecuperacionContrasena = document.getElementById('formRecuperacionContrasena');
+const formularioRestablecerContrasena = document.getElementById('formRestablecerContrasena');
 const formularioVerificacionEmail = document.getElementById('formVerificacionEmail');
 const mensajeAutenticacion = document.getElementById('mensajeAutenticacion');
 const crudProyectos = document.getElementById('crudProyectos');
 let emailPendienteVerificacion = '';
 let modoRegistro = false;
+let tokenRestablecimiento = new URLSearchParams(window.location.search).get('token');
+const enlaceRestablecimientoInvalido = new URLSearchParams(window.location.search).has('error');
 
 // En la web publicada se muestra el acceso; el backend decide quién puede escribir.
 if (apiBaseUrl) {
   window.portfolioAdminAuthenticated = false;
   panelAutenticacion.hidden = false;
   crudProyectos.hidden = true;
+}
+
+if (apiBaseUrl && (tokenRestablecimiento || enlaceRestablecimientoInvalido)) {
+  document.getElementById('panelGestionProyectos').open = true;
+
+  if (tokenRestablecimiento) {
+    formularioAutenticacion.hidden = true;
+    formularioRecuperacionContrasena.hidden = true;
+    formularioVerificacionEmail.hidden = true;
+    formularioRestablecerContrasena.hidden = false;
+  } else {
+    mensajeAutenticacion.textContent = 'El enlace de recuperación venció o no es válido. Iniciá sesión o pedí uno nuevo.';
+  }
+
+  const urlActual = new URL(window.location.href);
+  urlActual.searchParams.delete('token');
+  urlActual.searchParams.delete('error');
+  window.history.replaceState(null, document.title, `${urlActual.pathname}${urlActual.search}${urlActual.hash}`);
 }
 
 // Muestra estados vacios o errores de forma accesible dentro de la lista.
@@ -284,6 +306,7 @@ if (apiBaseUrl && authClient) {
     campoNombre.hidden = !modoRegistro;
     nombre.required = modoRegistro;
     password.autocomplete = modoRegistro ? 'new-password' : 'current-password';
+    document.getElementById('mostrarRecuperacionContrasena').hidden = modoRegistro;
     document.getElementById('enviarAutenticacion').textContent = modoRegistro
       ? 'Crear cuenta'
       : 'Iniciar sesión';
@@ -291,6 +314,97 @@ if (apiBaseUrl && authClient) {
       ? 'Ya tengo una cuenta'
       : 'Crear cuenta de administrador';
     mensajeAutenticacion.textContent = '';
+  });
+
+  document.getElementById('mostrarRecuperacionContrasena').addEventListener('click', () => {
+    const email = document.getElementById('emailAdministrador').value.trim();
+    document.getElementById('emailRecuperacion').value = email || window.PORTFOLIO_ADMIN_EMAIL;
+    formularioAutenticacion.hidden = true;
+    formularioRecuperacionContrasena.hidden = false;
+    mensajeAutenticacion.textContent = '';
+  });
+
+  document.getElementById('cancelarRecuperacionContrasena').addEventListener('click', () => {
+    formularioRecuperacionContrasena.hidden = true;
+    formularioAutenticacion.hidden = false;
+    mensajeAutenticacion.textContent = '';
+  });
+
+  formularioRecuperacionContrasena.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    mensajeAutenticacion.textContent = '';
+    const email = document.getElementById('emailRecuperacion').value.trim();
+    const boton = formularioRecuperacionContrasena.querySelector('button[type="submit"]');
+
+    try {
+      if (email.toLowerCase() !== window.PORTFOLIO_ADMIN_EMAIL.toLowerCase()) {
+        throw new Error('La recuperación está limitada a la cuenta administradora autorizada.');
+      }
+
+      boton.disabled = true;
+      const { error } = await authClient.requestPasswordReset({
+        email,
+        redirectTo: `${window.location.origin}${window.location.pathname}`,
+      });
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      formularioRecuperacionContrasena.hidden = true;
+      formularioAutenticacion.hidden = false;
+      mensajeAutenticacion.textContent = 'Si la cuenta está registrada, recibirás un enlace para restablecer la contraseña. Revisá también el correo no deseado.';
+    } catch (error) {
+      mostrarErrorAutenticacion(error);
+    } finally {
+      boton.disabled = false;
+    }
+  });
+
+  document.getElementById('cancelarRestablecerContrasena').addEventListener('click', () => {
+    tokenRestablecimiento = null;
+    formularioRestablecerContrasena.hidden = true;
+    formularioAutenticacion.hidden = false;
+    mensajeAutenticacion.textContent = '';
+  });
+
+  formularioRestablecerContrasena.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    mensajeAutenticacion.textContent = '';
+    const nuevaContrasena = document.getElementById('nuevaContrasena').value;
+    const confirmarContrasena = document.getElementById('confirmarNuevaContrasena').value;
+    const boton = formularioRestablecerContrasena.querySelector('button[type="submit"]');
+
+    try {
+      if (!tokenRestablecimiento) {
+        throw new Error('El enlace de recuperación no es válido. Pedí uno nuevo.');
+      }
+
+      if (nuevaContrasena !== confirmarContrasena) {
+        throw new Error('Las contraseñas no coinciden.');
+      }
+
+      boton.disabled = true;
+      const { error } = await authClient.resetPassword({
+        newPassword: nuevaContrasena,
+        token: tokenRestablecimiento,
+      });
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      tokenRestablecimiento = null;
+      formularioRestablecerContrasena.hidden = true;
+      formularioAutenticacion.hidden = false;
+      document.getElementById('emailAdministrador').value = window.PORTFOLIO_ADMIN_EMAIL;
+      document.getElementById('passwordAdministrador').value = '';
+      document.getElementById('nuevaContrasena').value = '';
+      document.getElementById('confirmarNuevaContrasena').value = '';
+      mensajeAutenticacion.textContent = 'Contraseña actualizada. Ya podés iniciar sesión.';
+    } catch (error) {
+      mostrarErrorAutenticacion(error);
+    } finally {
+      boton.disabled = false;
+    }
   });
 
   formularioVerificacionEmail.addEventListener('submit', async (event) => {
@@ -371,16 +485,18 @@ if (apiBaseUrl && authClient) {
     }
   });
 
-  authClient.getSession().then(async ({ data, error }) => {
-    if (error) {
-      throw new Error(error.message);
-    }
+  if (!tokenRestablecimiento) {
+    authClient.getSession().then(async ({ data, error }) => {
+      if (error) {
+        throw new Error(error.message);
+      }
 
-    const usuario = data?.user || data?.session?.user;
-    if (usuario) {
-      await establecerSesion(usuario);
-    }
-  }).catch(mostrarErrorAutenticacion);
+      const usuario = data?.user || data?.session?.user;
+      if (usuario) {
+        await establecerSesion(usuario);
+      }
+    }).catch(mostrarErrorAutenticacion);
+  }
 } else if (apiBaseUrl) {
   mensajeAutenticacion.textContent = 'No se cargó el cliente de autenticación. Volvé a generar el bundle.';
 }

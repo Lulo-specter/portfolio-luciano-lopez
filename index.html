@@ -142,6 +142,35 @@
             <div class="acciones-formulario">
               <button id="enviarAutenticacion" class="btn" type="submit">Iniciar sesión</button>
               <button id="cambiarModoAutenticacion" class="btn btn-secundario" type="button">Crear cuenta de administrador</button>
+              <button id="mostrarRecuperacionContrasena" class="btn btn-secundario" type="button">Olvidé mi contraseña</button>
+            </div>
+          </form>
+
+          <form id="formRecuperacionContrasena" class="formulario" hidden>
+            <p>Te enviaremos un enlace para crear una contraseña nueva.</p>
+            <div class="campo">
+              <label for="emailRecuperacion">Email</label>
+              <input id="emailRecuperacion" type="email" autocomplete="email" required>
+            </div>
+            <div class="acciones-formulario">
+              <button class="btn" type="submit">Enviar enlace de recuperación</button>
+              <button id="cancelarRecuperacionContrasena" class="btn btn-secundario" type="button">Volver al inicio de sesión</button>
+            </div>
+          </form>
+
+          <form id="formRestablecerContrasena" class="formulario" hidden>
+            <p>Elegí una contraseña nueva de al menos 8 caracteres.</p>
+            <div class="campo">
+              <label for="nuevaContrasena">Nueva contraseña</label>
+              <input id="nuevaContrasena" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+            </div>
+            <div class="campo">
+              <label for="confirmarNuevaContrasena">Confirmar nueva contraseña</label>
+              <input id="confirmarNuevaContrasena" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+            </div>
+            <div class="acciones-formulario">
+              <button class="btn" type="submit">Guardar contraseña nueva</button>
+              <button id="cancelarRestablecerContrasena" class="btn btn-secundario" type="button">Volver al inicio de sesión</button>
             </div>
           </form>
 
